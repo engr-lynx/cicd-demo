@@ -55,7 +55,7 @@ export class ArchiDeployStage extends Stage {
       new RepoDbContPipelineStack(this, serviceId + 'DbPipeline', {
         repoProps: serviceDbRepoProps,
         stageProps: serviceDbStageProps,
-        task: serviceDb.dbTask,
+        task: serviceDb.task,
       });
       const serviceAppRepoProps = buildRepoProps(serviceContext.appPipeline);
       const serviceAppStageProps = buildStageProps(serviceContext.appPipeline);
