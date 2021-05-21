@@ -37,6 +37,10 @@ export interface DbProps {
   cpu: number,
 }
 
+export interface AppProps {
+  mem: number,
+}
+
 export class ContextError extends Error {
   constructor(message: string) {
     super(message);
@@ -87,4 +91,11 @@ export function buildDbProps (context: Context) {
     cpu: context.cpu,
   };
   return dbProps;
+}
+
+export function buildAppProps (context: Context) {
+  const appProps: AppProps = {
+    mem: context.mem,
+  };
+  return appProps;
 }

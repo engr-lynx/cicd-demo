@@ -7,7 +7,7 @@ import { CdnStack } from './cdn-stack';
 import { NetworkClusterStack } from './network-cluster-stack';
 import { SlsContStack } from './sls-cont-stack';
 import { DbContStack } from './db-cont-stack';
-import { Context, buildRepoProps, buildStageProps, buildDbProps } from './context-helper';
+import { Context, buildRepoProps, buildStageProps, buildAppProps, buildDbProps } from './context-helper';
 
 /**
  * Deployable unit of entire architecture
@@ -37,26 +37,28 @@ export class ArchiDeployStage extends Stage {
       env: siteEnv,
     });
     const serviceNetwork = new NetworkClusterStack(this, 'ServiceNetwork');
-    const servicePipelinesContext = this.node.tryGetContext('ServicePipelines');
-    Object.entries(servicePipelinesContext).forEach(servicePipelineEntry => {
-      const [serviceId, servicePipelineContext] = servicePipelineEntry as [string, Context];
-      const serviceDbProps = buildDbProps(servicePipelineContext);  
+    const servicesContext = this.node.tryGetContext('Services');
+    Object.entries(servicesContext).forEach(serviceEntry => {
+      const [serviceId, serviceContext] = serviceEntry as [string, Context];
+      const serviceDbProps = buildDbProps(serviceContext.db);
       const serviceDb = new DbContStack(this, serviceId + 'Db', {
         dbProps: serviceDbProps,
         cluster: serviceNetwork.cluster,
       });
+      const serviceAppProps = buildAppProps(serviceContext.app);  
       const serviceApp = new SlsContStack(this, serviceId + 'App', {
+        appProps: serviceAppProps,
         vpc: serviceNetwork.vpc,
       });      
-      // const serviceDbRepoProps = buildRepoProps(servicePipelineContext);
-      // const serviceDbStageProps = buildStageProps(servicePipelineContext);
-      // new RepoDbContPipelineStack(this, serviceId + 'DbPipeline', {
-      //   repoProps: serviceDbRepoProps,
-      //   stageProps: serviceDbStageProps,
-      //   task: serviceDb.dbTask,
-      // });
-      const serviceAppRepoProps = buildRepoProps(servicePipelineContext);
-      const serviceAppStageProps = buildStageProps(servicePipelineContext);
+      const serviceDbRepoProps = buildRepoProps(serviceContext.dbPipeline);
+      const serviceDbStageProps = buildStageProps(serviceContext.dbPipeline);
+      new RepoDbContPipelineStack(this, serviceId + 'DbPipeline', {
+        repoProps: serviceDbRepoProps,
+        stageProps: serviceDbStageProps,
+        task: serviceDb.dbTask,
+      });
+      const serviceAppRepoProps = buildRepoProps(serviceContext.appPipeline);
+      const serviceAppStageProps = buildStageProps(serviceContext.appPipeline);
       new RepoSlsContPipelineStack(this, serviceId + 'AppPipeline', {
         repoProps: serviceAppRepoProps,
         stageProps: serviceAppStageProps,

@@ -1,14 +1,12 @@
 {
   "archiPipelineId": "CicdDemoArchiPipeline",
   "ArchiPipeline": {
-    "cpu": 512,
     "repoKind": "CodeCommit",
     "repoName": "cicd-demo-archi",
     "createRepo": true,
     "enableApproval": true
   },
   "SitePipeline": {
-    "cpu": 512,
     "repoKind": "GitHub",
     "repoName": "angular-sample",
     "tokenName": "github-token",
@@ -16,21 +14,48 @@
     "enableTest": true,
     "testSpecFilename": "testspec.yml"
   },
-  "ServicePipelines": {
+  "Services": {
     "Service1": {
-      "cpu": 512,
-      "repoKind": "CodeCommit",
-      "repoName": "net-sample1",
-      "createRepo": true,
-      "enableApproval": true
+      "app": {
+        "mem": 1024
+      },
+      "db": {
+        "cpu": 512
+      },
+      "appPipeline": {
+        "repoKind": "CodeCommit",
+        "repoName": "net-sample",
+        "createRepo": true,
+        "enableApproval": true
+      },
+      "dbPipeline": {
+        "repoKind": "GitHub",
+        "repoName": "db-sample",
+        "tokenName": "github-token",
+        "owner": "engr-lynx",
+        "enableApproval": true
+      }
     },
     "Service2": {
-      "cpu": 512,
-      "repoKind": "GitHub",
-      "repoName": "net-sample",
-      "tokenName": "github-token",
-      "owner": "engr-lynx",
-      "enableApproval": true
+      "app": {
+        "mem": 1024
+      },
+      "db": {
+        "cpu": 512
+      },
+      "dbPipeline": {
+        "repoKind": "CodeCommit",
+        "repoName": "db-sample",
+        "createRepo": true,
+        "enableApproval": true
+      },
+      "appPipeline": {
+        "repoKind": "GitHub",
+        "repoName": "net-sample",
+        "tokenName": "github-token",
+        "owner": "engr-lynx",
+        "enableApproval": true
+      }
     }
   }
 }
