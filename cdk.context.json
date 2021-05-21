@@ -16,17 +16,11 @@
   },
   "Services": {
     "Service1": {
-      "app": {
-        "mem": 1024
-      },
       "db": {
         "cpu": 512
       },
-      "appPipeline": {
-        "repoKind": "CodeCommit",
-        "repoName": "net-sample",
-        "createRepo": true,
-        "enableApproval": true
+      "app": {
+        "mem": 1024
       },
       "dbPipeline": {
         "repoKind": "GitHub",
@@ -34,14 +28,20 @@
         "tokenName": "github-token",
         "owner": "engr-lynx",
         "enableApproval": true
+      },
+      "appPipeline": {
+        "repoKind": "CodeCommit",
+        "repoName": "net-sample",
+        "createRepo": true,
+        "enableApproval": true
       }
     },
     "Service2": {
-      "app": {
-        "mem": 1024
-      },
       "db": {
         "cpu": 512
+      },
+      "app": {
+        "mem": 1024
       },
       "dbPipeline": {
         "repoKind": "CodeCommit",
