@@ -55,7 +55,10 @@ export class RepoDbContPipelineStack extends Stack {
             --cache-from ${REPO_URI}:latest -t ${REPO_URI}:latest .',
         },
         post_build: {
-          commands: 'docker push ${REPO_URI}',
+          commands: [
+            'docker push ${REPO_URI}',
+            'TASK_VERSION=$(aws ecs register-task-definition --family ${TASK_FAMILY}'
+          ],
         },
       },
     });
