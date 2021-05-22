@@ -63,8 +63,9 @@ export class RepoCdnPipelineStack extends Stack {
     };
     pipelineStages.push(buildStage);
     /* Todo:
-     * optional stages (in order from build) - staging (2 buckets & existingBucketObj), approval
+     * optional stages (in order from build) - staging (2 identical cdn-stack), approval
      * config - privileged build?
+     * switch S3s for the staging & prod CloudFronts
      */
     if (repoCdnPipelineProps.stageProps.enableTest) {
       const testSpecFilename = repoCdnPipelineProps.stageProps.testSpecFilename;

@@ -79,8 +79,9 @@ export class RepoSlsContPipelineStack extends Stack {
       ],
     };
     /* Todo:
-     * optional stages (in order from build) - staging (Lambda alias / API Gateway stage), test
+     * optional stages (in order from build) - staging (Lambda alias), test
      * config - filename of testspec file; additional commands for contSpec
+     * switch Lambdas for the staging & prod API Gateways
      */
     pipelineStages.push(buildStage);
     if (repoSlsContPipelineProps.stageProps.enableApproval) {

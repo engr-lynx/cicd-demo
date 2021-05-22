@@ -40,6 +40,7 @@ export class RepoDbContPipelineStack extends Stack {
       env: {
         variables: {
           REPO_URI: contRepo.repositoryUri,
+          TASK_FAMILY: repoDbContPipelineProps.task.family,
         },
       },
       phases: {

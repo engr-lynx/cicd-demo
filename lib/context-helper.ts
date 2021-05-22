@@ -33,6 +33,10 @@ export interface StageProps {
   deploySpecFilename?: string,
 }
 
+export interface NetworkProps {
+  namespace: string,
+}
+
 export interface DbProps {
   cpu: number,
 }
@@ -84,6 +88,13 @@ export function buildStageProps (context: Context) {
     deploySpecFilename: context.deploySpecFilename,  
   };
   return stageProps;
+}
+
+export function buildNetworkProps (context: Context) {
+  const networkProps: NetworkProps = {
+    namespace: context.namespace,
+  };
+  return networkProps;
 }
 
 export function buildDbProps (context: Context) {
