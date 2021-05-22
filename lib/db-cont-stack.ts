@@ -17,6 +17,7 @@ export class DbContStack extends Stack {
     super(scope, id, dbContProps);
     const taskDef = new FargateTaskDefinition(this, 'TaskDef', {
       cpu: dbContProps.dbProps.cpu,
+      memoryLimitMiB: dbContProps.dbProps.mem,
     });
     const contImage = ContainerImage.fromRegistry('mcr.microsoft.com/mssql/server');
     taskDef.addContainer('Cont', {

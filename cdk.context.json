@@ -20,7 +20,8 @@
   "Services": {
     "Service1": {
       "db": {
-        "cpu": 512
+        "cpu": 512,
+        "mem": 1024
       },
       "app": {
         "mem": 1024
@@ -41,7 +42,8 @@
     },
     "Service2": {
       "db": {
-        "cpu": 512
+        "cpu": 512,
+        "mem": 1024
       },
       "app": {
         "mem": 1024

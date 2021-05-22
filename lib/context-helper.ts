@@ -39,6 +39,7 @@ export interface NetworkProps {
 
 export interface DbProps {
   cpu: number,
+  mem: number,
 }
 
 export interface AppProps {
@@ -100,6 +101,7 @@ export function buildNetworkProps (context: Context) {
 export function buildDbProps (context: Context) {
   const dbProps: DbProps = {
     cpu: context.cpu,
+    mem: context.mem,
   };
   return dbProps;
 }
