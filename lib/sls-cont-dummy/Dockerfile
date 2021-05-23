@@ -1,4 +1,4 @@
-FROM public.ecr.aws/lambda/python:3.8
+FROM public.ecr.aws/lambda/provided:latest
 
-COPY app.py ./
-CMD ["app.handler"]
+COPY function.sh ./
+CMD ["./function.sh"]

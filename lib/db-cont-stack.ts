@@ -19,7 +19,7 @@ export class DbContStack extends Stack {
       cpu: dbContProps.dbProps.cpu,
       memoryLimitMiB: dbContProps.dbProps.mem,
     });
-    const contImage = ContainerImage.fromRegistry('mcr.microsoft.com/mssql/server');
+    const contImage = ContainerImage.fromRegistry('daemonza/testapi');
     taskDef.addContainer('Cont', {
       image: contImage,
     });
