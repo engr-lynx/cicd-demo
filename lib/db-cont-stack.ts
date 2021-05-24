@@ -6,7 +6,7 @@ import { DbProps } from './context-helper';
 export interface DbContProps extends StackProps {
   dbProps: DbProps,
   cluster: Cluster,
-  privateNamespace: PrivateDnsNamespace,
+  namespace: PrivateDnsNamespace,
 }
 
 export class DbContStack extends Stack {
@@ -25,7 +25,7 @@ export class DbContStack extends Stack {
     });
     this.task = taskDef;
     const cloudMapOptions = {
-      cloudMapNamespace: dbContProps.privateNamespace,
+      cloudMapNamespace: dbContProps.namespace,
     };
     new FargateService(this, 'Service', {
       cluster: dbContProps.cluster,

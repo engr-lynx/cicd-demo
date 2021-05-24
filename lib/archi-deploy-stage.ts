@@ -4,8 +4,7 @@ import { RepoDbContPipelineStack } from './repo-db-cont-pipeline-stack';
 import { RepoSlsContPipelineStack } from './repo-sls-cont-pipeline-stack';
 import { RepoCdnPipelineStack } from './repo-cdn-pipeline-stack';
 import { CdnStack } from './cdn-stack';
-import { NetworkStack } from './network-stack';
-import { ClusterStack } from './cluster-stack';
+import { ContNetworkStack } from './cont-network-stack';
 import { SlsContStack } from './sls-cont-stack';
 import { DbContStack } from './db-cont-stack';
 import { Context, buildRepoProps, buildStageProps, buildNetworkProps, buildAppProps, buildDbProps } from './context-helper';
@@ -39,11 +38,8 @@ export class ArchiDeployStage extends Stage {
     });
     const serviceNetworkContext = this.node.tryGetContext('ServiceNetwork');
     const serviceNetworkProps = buildNetworkProps(serviceNetworkContext);
-    const serviceNetwork = new NetworkStack(this, 'ServiceNetwork', {
-      namespace: serviceNetworkProps.namespace,
-    });
-    const serviceCluster = new ClusterStack(this, 'ServiceCluster', {
-      vpc: serviceNetwork.vpc,
+    const serviceNetwork = new ContNetworkStack(this, 'ServiceNetwork', {
+      networkProps: serviceNetworkProps,
     });
     const servicesContext = this.node.tryGetContext('Services');
     Object.entries(servicesContext).forEach(serviceEntry => {
@@ -51,8 +47,8 @@ export class ArchiDeployStage extends Stage {
       const serviceDbProps = buildDbProps(serviceContext.db);
       const serviceDb = new DbContStack(this, serviceId + 'Db', {
         dbProps: serviceDbProps,
-        cluster: serviceCluster.cluster,
-        privateNamespace: serviceNetwork.privateNamespace,
+        cluster: serviceNetwork.cluster,
+        namespace: serviceNetwork.namespace,
       });
       const serviceAppProps = buildAppProps(serviceContext.app);  
       const serviceApp = new SlsContStack(this, serviceId + 'App', {
