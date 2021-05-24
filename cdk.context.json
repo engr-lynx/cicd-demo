@@ -15,7 +15,8 @@
     "testSpecFilename": "testspec.yml"
   },
   "ServiceNetwork": {
-    "namespace": "cicddemo.aws"
+    "namespace": "cicddemo.net",
+    "azCount": 2
   },
   "Services": {
     "Service1": {

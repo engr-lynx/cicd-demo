@@ -35,6 +35,7 @@ export interface StageProps {
 
 export interface NetworkProps {
   namespace: string,
+  azCount: number,
 }
 
 export interface DbProps {
@@ -94,6 +95,7 @@ export function buildStageProps (context: Context) {
 export function buildNetworkProps (context: Context) {
   const networkProps: NetworkProps = {
     namespace: context.namespace,
+    azCount: context.azCount,
   };
   return networkProps;
 }

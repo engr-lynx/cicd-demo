@@ -1,5 +1,5 @@
 import { Construct, Stack, StackProps } from '@aws-cdk/core';
-import { Vpc } from '@aws-cdk/aws-ec2';
+import { Vpc, SubnetType } from '@aws-cdk/aws-ec2';
 import { PrivateDnsNamespace } from '@aws-cdk/aws-servicediscovery';
 import { Cluster } from '@aws-cdk/aws-ecs';
 import { NetworkProps } from './context-helper';
@@ -16,7 +16,26 @@ export class ContNetworkStack extends Stack {
 
   constructor(scope: Construct, id: string, contNetworkProps: ContNetworkProps) {
     super(scope, id, contNetworkProps);
-    this.vpc = new Vpc(this, 'Vpc');
+    const inSubnetConf = {
+      name: 'In',
+      subnetType: SubnetType.PUBLIC,
+    };
+    const appSubnetConf = {
+      name: 'App',
+      subnetType: SubnetType.PRIVATE,
+    };
+    const dbSubnetConf = {
+      name: 'Db',
+      subnetType: SubnetType.ISOLATED,
+    };
+    this.vpc = new Vpc(this, 'Vpc', {
+      maxAzs: contNetworkProps.networkProps.azCount,
+      subnetConfiguration: [
+        inSubnetConf,
+        appSubnetConf,
+        dbSubnetConf,
+      ],
+    });
     this.namespace = new PrivateDnsNamespace(this, 'Namespace', {
       name: contNetworkProps.networkProps.namespace,
       vpc: this.vpc,
