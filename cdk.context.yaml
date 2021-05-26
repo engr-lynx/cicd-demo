@@ -1,0 +1,76 @@
+archi:
+  id: CicdDemoArchiPipeline
+  pipeline:
+    repo:
+      kind: CodeCommit
+      name: cicd-demo-archi
+      create: true
+    approval:
+      enable: true
+site:
+  pipeline:
+    repo:
+      kind: GitHub
+      name: angular-sample
+      tokenName: github-token
+      owner: engr-lynx
+    test:
+      enable: true
+      specFilename: testspec.yml
+services:
+  network:
+    namespace: cicddemo.net
+    azCount: 2
+  list:
+  -
+    id: Service1
+    db:
+      kind: CustomDbCont
+      spec:
+        cpu: 512
+        mem: 1024
+      pipeline:
+        repo:
+          kind: GitHub
+          name: db-sample
+          tokenName: github-token
+          owner: engr-lynx
+        approval:
+          enable: true
+    app:
+      kind: CustomSlsCont
+      spec:
+        mem: 1024
+      pipeline:
+        repo:
+          kind: CodeCommit
+          name: net-sample
+          create: true
+        approval:
+          enable: true
+  -
+    id: Service2
+    db:
+      kind: CustomDbCont
+      spec:
+        cpu: 512
+        mem: 1024
+      pipeline:
+        repo:
+          kind: CodeCommit
+          name: db-sample
+          create: true
+        approval:
+          enable: true
+    app:
+      kind: CustomSlsCont
+      spec:
+        mem: 1024
+      pipeline:
+        repo:
+          kind: GitHub
+          name: net-sample
+          tokenName: github-token
+          owner: engr-lynx
+        approval:
+          enable: true

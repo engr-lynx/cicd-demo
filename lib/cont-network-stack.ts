@@ -5,7 +5,7 @@ import { Cluster } from '@aws-cdk/aws-ecs';
 import { NetworkProps } from './context-helper';
 
 export interface ContNetworkProps extends StackProps {
-  networkProps: NetworkProps,
+  network: NetworkProps,
 }
 
 export class ContNetworkStack extends Stack {
@@ -29,7 +29,7 @@ export class ContNetworkStack extends Stack {
       subnetType: SubnetType.ISOLATED,
     };
     this.vpc = new Vpc(this, 'Vpc', {
-      maxAzs: contNetworkProps.networkProps.azCount,
+      maxAzs: contNetworkProps.network.azCount,
       subnetConfiguration: [
         inSubnetConf,
         appSubnetConf,
@@ -37,7 +37,7 @@ export class ContNetworkStack extends Stack {
       ],
     });
     this.namespace = new PrivateDnsNamespace(this, 'Namespace', {
-      name: contNetworkProps.networkProps.namespace,
+      name: contNetworkProps.network.namespace,
       vpc: this.vpc,
     });
     this.cluster = new Cluster(this, "Cluster", {

@@ -569,6 +569,23 @@
     "@aws-cdk/core" "1.104.0"
     constructs "^3.3.69"
 
+"@aws-cdk/aws-rds@1.104.0":
+  version "1.104.0"
+  resolved "https://registry.yarnpkg.com/@aws-cdk/aws-rds/-/aws-rds-1.104.0.tgz#9c3497590073a5107d2f9a8031fbb06711ed3632"
+  integrity sha512-xY3BRvhIjCehUbc7dzcxPZm95B4DmJqT1h5zAHzabFfMtdM0Zv6cfh83nTXnhhcKy7Lpic21a6uo38zwNkC6Aw==
+  dependencies:
+    "@aws-cdk/aws-cloudwatch" "1.104.0"
+    "@aws-cdk/aws-ec2" "1.104.0"
+    "@aws-cdk/aws-events" "1.104.0"
+    "@aws-cdk/aws-iam" "1.104.0"
+    "@aws-cdk/aws-kms" "1.104.0"
+    "@aws-cdk/aws-logs" "1.104.0"
+    "@aws-cdk/aws-s3" "1.104.0"
+    "@aws-cdk/aws-secretsmanager" "1.104.0"
+    "@aws-cdk/core" "1.104.0"
+    "@aws-cdk/cx-api" "1.104.0"
+    constructs "^3.3.69"
+
 "@aws-cdk/aws-route53-targets@1.104.0":
   version "1.104.0"
   resolved "https://registry.yarnpkg.com/@aws-cdk/aws-route53-targets/-/aws-route53-targets-1.104.0.tgz#3e3889b8e261bb840fff3d3912ed59de93f1dff8"
@@ -2265,6 +2282,18 @@ yallist@^4.0.0:
   version "4.0.0"
   resolved "https://registry.yarnpkg.com/yallist/-/yallist-4.0.0.tgz#9bb92790d9c0effec63be73519e11a35019a3a72"
   integrity sha512-3wdGidZyq5PB084XLES5TpOSRA3wjXAlIWMhum2kRcv/41Sn2emQ0dycQW4uZXLejwKvg6EsvbdlVL+FYEct7A==
+
+yaml2json@^1.0.2:
+  version "1.0.2"
+  resolved "https://registry.yarnpkg.com/yaml2json/-/yaml2json-1.0.2.tgz#3ab846deb87c062d9904e143c6947128d488c119"
+  integrity sha1-OrhG3rh8Bi2ZBOFDxpRxKNSIwRk=
+  dependencies:
+    yaml "0.2.x"
+
+yaml@0.2.x:
+  version "0.2.3"
+  resolved "https://registry.yarnpkg.com/yaml/-/yaml-0.2.3.tgz#b5450e92e76ef36b5dd24e3660091ebaeef3e5c7"
+  integrity sha1-tUUOkudu82td0k42YAkeuu7z5cc=
 
 yaml@1.10.2:
   version "1.10.2"

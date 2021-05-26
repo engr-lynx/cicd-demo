@@ -1,12 +1,12 @@
 import { Construct, Stack, StackProps } from '@aws-cdk/core';
 import { Cluster, FargateService, FargateTaskDefinition, ContainerImage } from '@aws-cdk/aws-ecs';
 import { PrivateDnsNamespace } from '@aws-cdk/aws-servicediscovery';
-import { DbProps } from './context-helper';
+import { CustomDbContProps } from './context-helper';
 
 export interface DbContProps extends StackProps {
-  dbProps: DbProps,
-  cluster: Cluster,
+  customDbCont: CustomDbContProps,
   namespace: PrivateDnsNamespace,
+  cluster: Cluster,
 }
 
 export class DbContStack extends Stack {
@@ -16,8 +16,8 @@ export class DbContStack extends Stack {
   constructor(scope: Construct, id: string, dbContProps: DbContProps) {
     super(scope, id, dbContProps);
     const taskDef = new FargateTaskDefinition(this, 'TaskDef', {
-      cpu: dbContProps.dbProps.cpu,
-      memoryLimitMiB: dbContProps.dbProps.mem,
+      cpu: dbContProps.customDbCont.spec.cpu,
+      memoryLimitMiB: dbContProps.customDbCont.spec.mem,
     });
     const contImage = ContainerImage.fromRegistry('daemonza/testapi');
     taskDef.addContainer('Cont', {

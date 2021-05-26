@@ -9,12 +9,12 @@ import { Cluster, FargateService, FargateTaskDefinition, ContainerImage } from '
 import { PolicyStatement, Effect } from '@aws-cdk/aws-iam';
 import { RetentionDays } from '@aws-cdk/aws-logs';
 import { buildRepoSourceAction } from './pipeline-helper';
-import { RepoProps, StageProps } from './context-helper';
+import { PipelineProps } from './context-helper';
+import { DbContStack } from './db-cont-stack';
 
 export interface RepoDbContPipelineProps extends StackProps {
-  repoProps: RepoProps,
-  stageProps: StageProps,
-  task: FargateTaskDefinition,
+  pipeline: PipelineProps,
+  dbCont: DbContStack,
 }
 
 export class RepoDbContPipelineStack extends Stack {
@@ -24,8 +24,8 @@ export class RepoDbContPipelineStack extends Stack {
     const pipelineStages = [];
     const repoOutput = new Artifact('RepoOutput');
     const repoSource = buildRepoSourceAction(this, {
-      repoProps: repoDbContPipelineProps.repoProps,
-      repoOutput,
+      repo: repoDbContPipelineProps.pipeline.repo,
+      output: repoOutput,
     });
     const sourceStage = {
       stageName: 'Source',
@@ -40,7 +40,7 @@ export class RepoDbContPipelineStack extends Stack {
       env: {
         variables: {
           REPO_URI: contRepo.repositoryUri,
-          TASK_FAMILY: repoDbContPipelineProps.task.family,
+          TASK_FAMILY: repoDbContPipelineProps.dbCont.task.family,
         },
       },
       phases: {
@@ -57,7 +57,7 @@ export class RepoDbContPipelineStack extends Stack {
         post_build: {
           commands: [
             'docker push ${REPO_URI}',
-            'TASK_VERSION=$(aws ecs register-task-definition --family ${TASK_FAMILY}'
+            'aws ecs register-task-definition --family ${TASK_FAMILY}'
           ],
         },
       },
@@ -88,7 +88,7 @@ export class RepoDbContPipelineStack extends Stack {
      * config - filename of testspec file; additional commands for contSpec
      */
     pipelineStages.push(buildStage);
-    if (repoDbContPipelineProps.stageProps.enableApproval) {
+    if (repoDbContPipelineProps.pipeline.approval?.enable) {
       const approvalAction = new ManualApprovalAction({
         actionName: 'ManualApproval',
       });

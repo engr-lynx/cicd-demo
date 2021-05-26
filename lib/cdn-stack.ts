@@ -5,13 +5,13 @@ import { CloudFrontToS3 } from '@aws-solutions-constructs/aws-cloudfront-s3';
 
 export class CdnStack extends Stack {
 
-  public readonly sourceBucket: Bucket;
+  public readonly source: Bucket;
   public readonly distribution: Distribution;
 
   constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
     const cdn = new CloudFrontToS3(this, 'Cdn', {});
-    this.sourceBucket = cdn.s3Bucket as Bucket;
+    this.source = cdn.s3Bucket as Bucket;
     this.distribution = cdn.cloudFrontWebDistribution;
     new CfnOutput(this, 'URL', {
       value: 'https://' + cdn.cloudFrontWebDistribution.domainName,

@@ -1,7 +1,6 @@
 import { join } from 'path';
 import { Construct, Stack, StackProps, Arn, Duration } from '@aws-cdk/core';
 import { Bucket } from '@aws-cdk/aws-s3';
-import { Distribution } from '@aws-cdk/aws-cloudfront';
 import { Function, Runtime, Code } from '@aws-cdk/aws-lambda';
 import { PolicyStatement, Effect } from '@aws-cdk/aws-iam';
 import { PipelineProject, LinuxBuildImage, BuildSpec, Cache } from '@aws-cdk/aws-codebuild';
@@ -9,14 +8,13 @@ import { Artifact, Pipeline } from '@aws-cdk/aws-codepipeline';
 import { CodeBuildAction, CodeBuildActionType, S3DeployAction, LambdaInvokeAction } from '@aws-cdk/aws-codepipeline-actions';
 import { RetentionDays } from '@aws-cdk/aws-logs';
 import { buildRepoSourceAction } from './pipeline-helper';
-import { RepoProps, StageProps, ContextError } from './context-helper';
+import { PipelineProps, ContextError } from './context-helper';
+import { CdnStack } from './cdn-stack';
 
 export interface RepoCdnPipelineProps extends StackProps {
-  repoProps: RepoProps,
-  stageProps: StageProps,
-  distributionSource: Bucket,
-  distribution: Distribution,
-  pipelineCache: Bucket,
+  pipeline: PipelineProps,
+  cdn: CdnStack,
+  cacheBucket: Bucket,
 }
 
 export class RepoCdnPipelineStack extends Stack {
@@ -26,8 +24,8 @@ export class RepoCdnPipelineStack extends Stack {
     const pipelineStages = [];
     const repoOutput = new Artifact('RepoOutput');
     const repoSource = buildRepoSourceAction(this, {
-      repoProps: repoCdnPipelineProps.repoProps,
-      repoOutput,
+      repo: repoCdnPipelineProps.pipeline.repo,
+      output: repoOutput,
     });
     const sourceStage = {
       stageName: 'Source',
@@ -36,7 +34,7 @@ export class RepoCdnPipelineStack extends Stack {
       ],
     };
     pipelineStages.push(sourceStage);
-    const buildCache = Cache.bucket(repoCdnPipelineProps.pipelineCache, {
+    const buildCache = Cache.bucket(repoCdnPipelineProps.cacheBucket, {
       prefix: 'build'
     });
     const linuxEnv = {
@@ -67,13 +65,13 @@ export class RepoCdnPipelineStack extends Stack {
      * config - privileged build?
      * switch S3s for the staging & prod CloudFronts
      */
-    if (repoCdnPipelineProps.stageProps.enableTest) {
-      const testSpecFilename = repoCdnPipelineProps.stageProps.testSpecFilename;
+    if (repoCdnPipelineProps.pipeline.test?.enable) {
+      const testSpecFilename = repoCdnPipelineProps.pipeline.test?.specFilename;
       if (!testSpecFilename) {
         throw new ContextError('Invalid test spec filename.');
       }
       const testSpec = BuildSpec.fromSourceFilename(testSpecFilename);
-      const testCache = Cache.bucket(repoCdnPipelineProps.pipelineCache, {
+      const testCache = Cache.bucket(repoCdnPipelineProps.cacheBucket, {
         prefix: 'test'
       });
       const testProject = new PipelineProject(this, 'TestProject', {
@@ -98,7 +96,7 @@ export class RepoCdnPipelineStack extends Stack {
     const s3Deploy = new S3DeployAction({
       actionName: 'S3Deploy',
       input: buildOutput,
-      bucket: repoCdnPipelineProps.distributionSource,
+      bucket: repoCdnPipelineProps.cdn.source,
     });
     const deployStage = {
       stageName: 'Deploy',
@@ -111,7 +109,7 @@ export class RepoCdnPipelineStack extends Stack {
       service: 'cloudfront',
       resource: 'distribution',
       region: '',
-      resourceName: repoCdnPipelineProps.distribution.distributionId,
+      resourceName: repoCdnPipelineProps.cdn.distribution.distributionId,
     }, this);
     const distributionPolicy = new PolicyStatement({
       effect: Effect.ALLOW,
@@ -134,7 +132,7 @@ export class RepoCdnPipelineStack extends Stack {
       ],
     });
     const distributionProps = {
-      distributionId: repoCdnPipelineProps.distribution.distributionId,
+      distributionId: repoCdnPipelineProps.cdn.distribution.distributionId,
     };
     const cacheInvalidate = new LambdaInvokeAction({
       actionName: 'CacheInvalidate',

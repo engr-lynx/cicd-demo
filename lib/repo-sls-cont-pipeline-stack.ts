@@ -4,16 +4,16 @@ import { Repository, AuthorizationToken } from '@aws-cdk/aws-ecr';
 import { PipelineProject, LinuxBuildImage, BuildSpec } from '@aws-cdk/aws-codebuild';
 import { Artifact, Pipeline } from '@aws-cdk/aws-codepipeline';
 import { CodeBuildAction, ManualApprovalAction, LambdaInvokeAction } from '@aws-cdk/aws-codepipeline-actions';
-import { DockerImageFunction, Function, Runtime, Code } from '@aws-cdk/aws-lambda';
+import { Function, Runtime, Code } from '@aws-cdk/aws-lambda';
 import { PolicyStatement, Effect } from '@aws-cdk/aws-iam';
 import { RetentionDays } from '@aws-cdk/aws-logs';
 import { buildRepoSourceAction } from './pipeline-helper';
-import { RepoProps, StageProps } from './context-helper';
+import { PipelineProps } from './context-helper';
+import { SlsContStack } from './sls-cont-stack';
 
 export interface RepoSlsContPipelineProps extends StackProps {
-  repoProps: RepoProps,
-  stageProps: StageProps,
-  func: DockerImageFunction,
+  pipeline: PipelineProps,
+  slsCont: SlsContStack,
 }
 
 export class RepoSlsContPipelineStack extends Stack {
@@ -23,8 +23,8 @@ export class RepoSlsContPipelineStack extends Stack {
     const pipelineStages = [];
     const repoOutput = new Artifact('RepoOutput');
     const repoSource = buildRepoSourceAction(this, {
-      repoProps: repoSlsContPipelineProps.repoProps,
-      repoOutput,
+      repo: repoSlsContPipelineProps.pipeline.repo,
+      output: repoOutput,
     });
     const sourceStage = {
       stageName: 'Source',
@@ -84,7 +84,7 @@ export class RepoSlsContPipelineStack extends Stack {
      * switch Lambdas for the staging & prod API Gateways
      */
     pipelineStages.push(buildStage);
-    if (repoSlsContPipelineProps.stageProps.enableApproval) {
+    if (repoSlsContPipelineProps.pipeline.approval?.enable) {
       const approvalAction = new ManualApprovalAction({
         actionName: 'ManualApproval',
       });
@@ -102,7 +102,7 @@ export class RepoSlsContPipelineStack extends Stack {
         'lambda:UpdateFunctionCode',
       ],
       resources: [
-        repoSlsContPipelineProps.func.functionArn,
+        repoSlsContPipelineProps.slsCont.func.functionArn,
       ],
     });
     const deployCode = Code.fromAsset(join(__dirname, 'sls-cont-deploy-handler'));
@@ -122,7 +122,7 @@ export class RepoSlsContPipelineStack extends Stack {
       "ecr:InitiateLayerUpload"
     );
     const deployProps = {
-      funcName: repoSlsContPipelineProps.func.functionName,
+      funcName: repoSlsContPipelineProps.slsCont.func.functionName,
       repoUri: contRepo.repositoryUri + ':latest',
     };
     const slsDeploy = new LambdaInvokeAction({

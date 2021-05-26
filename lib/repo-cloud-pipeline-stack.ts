@@ -4,11 +4,10 @@ import { Construct, Stack, StackProps } from '@aws-cdk/core';
 import { CdkPipeline, SimpleSynthAction } from "@aws-cdk/pipelines";
 import { ArchiDeployStage } from './archi-deploy-stage';
 import { buildRepoSourceAction } from './pipeline-helper';
-import { RepoProps, StageProps } from './context-helper';
+import { PipelineProps } from './context-helper';
 
 export interface RepoCloudPipelineProps extends StackProps {
-  repoProps: RepoProps,
-  stageProps: StageProps,
+  pipeline: PipelineProps,
 }
 
 export class RepoCloudPipelineStack extends Stack {
@@ -17,17 +16,14 @@ export class RepoCloudPipelineStack extends Stack {
     super(scope, id, repoCloudPipelineProps);
     const repoOutput = new Artifact('RepoOutput');
     const repoSource = buildRepoSourceAction(this, {
-      repoProps: repoCloudPipelineProps.repoProps,
-      repoOutput: repoOutput,
+      repo: repoCloudPipelineProps.pipeline.repo,
+      output: repoOutput,
     });
     const cdkOutput = new Artifact('CdkOutput');
-    const linuxEnvironment = {
-      buildImage: LinuxBuildImage.STANDARD_5_0,
-    };
     const cdkSynth = SimpleSynthAction.standardYarnSynth({
       sourceArtifact: repoOutput,
       cloudAssemblyArtifact: cdkOutput,
-      environment: linuxEnvironment,
+      buildCommand: 'npx yaml2json cdk.context.yaml > cdk.context.json',
     });
     const repoCloudPipeline = new CdkPipeline(this, 'RepoCloudPipeline', {
       cloudAssemblyArtifact: cdkOutput,
@@ -36,7 +32,7 @@ export class RepoCloudPipelineStack extends Stack {
     });
     // This is where we add the application stages
     // ...
-    if (repoCloudPipelineProps.stageProps.enableApproval) {
+    if (repoCloudPipelineProps.pipeline.approval?.enable) {
       const approval = repoCloudPipeline.addStage('Approval');
       approval.addManualApprovalAction();  
     }

@@ -13,7 +13,8 @@
     "@types/node": "10.17.27",
     "aws-cdk": "1.104.0",
     "ts-node": "^9.0.0",
-    "typescript": "~3.9.7"
+    "typescript": "~3.9.7",
+    "yaml2json": "^1.0.2"
   },
   "dependencies": {
     "@aws-cdk/aws-apigateway": "1.104.0",
@@ -29,6 +30,7 @@
     "@aws-cdk/aws-iam": "1.104.0",
     "@aws-cdk/aws-lambda": "1.104.0",
     "@aws-cdk/aws-logs": "1.104.0",
+    "@aws-cdk/aws-rds": "1.104.0",
     "@aws-cdk/aws-s3": "1.104.0",
     "@aws-cdk/aws-servicediscovery": "1.104.0",
     "@aws-cdk/core": "1.104.0",

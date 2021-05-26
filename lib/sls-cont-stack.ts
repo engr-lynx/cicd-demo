@@ -5,10 +5,10 @@ import { AuthorizationType } from '@aws-cdk/aws-apigateway';
 import { ApiGatewayToLambda } from '@aws-solutions-constructs/aws-apigateway-lambda';
 import { DockerImageFunction, DockerImageCode } from '@aws-cdk/aws-lambda';
 import { RetentionDays } from '@aws-cdk/aws-logs';
-import { AppProps } from './context-helper';
+import { CustomSlsContProps } from './context-helper';
 
 export interface SlsContProps extends StackProps {
-  appProps: AppProps,
+  customSlsCont: CustomSlsContProps,
   vpc: Vpc,
 }
 
@@ -21,7 +21,7 @@ export class SlsContStack extends Stack {
     const lambdaCode = DockerImageCode.fromImageAsset(join(__dirname, 'sls-cont-dummy'));
     const lambdaObj = new DockerImageFunction(this, 'LambdaObj', {
       code: lambdaCode,
-      memorySize: slsContProps.appProps.mem,
+      memorySize: slsContProps.customSlsCont.spec.mem,
       vpc: slsContProps.vpc,
       logRetention: RetentionDays.ONE_DAY,
     });
