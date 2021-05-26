@@ -1,20 +1,22 @@
 import { join } from 'path';
 import { Construct, Stack, StackProps, Duration } from '@aws-cdk/core';
+import { Bucket } from '@aws-cdk/aws-s3';
 import { Repository, AuthorizationToken } from '@aws-cdk/aws-ecr';
-import { PipelineProject, LinuxBuildImage, BuildSpec } from '@aws-cdk/aws-codebuild';
+import { PipelineProject, LinuxBuildImage, BuildSpec, Cache } from '@aws-cdk/aws-codebuild';
 import { Artifact, Pipeline } from '@aws-cdk/aws-codepipeline';
-import { CodeBuildAction, ManualApprovalAction, LambdaInvokeAction } from '@aws-cdk/aws-codepipeline-actions';
+import { CodeBuildAction, ManualApprovalAction, CodeBuildActionType, LambdaInvokeAction } from '@aws-cdk/aws-codepipeline-actions';
 import { Function, Runtime, Code } from '@aws-cdk/aws-lambda';
 import { Cluster, FargateService, FargateTaskDefinition, ContainerImage } from '@aws-cdk/aws-ecs';
 import { PolicyStatement, Effect } from '@aws-cdk/aws-iam';
 import { RetentionDays } from '@aws-cdk/aws-logs';
 import { buildRepoSourceAction } from './pipeline-helper';
-import { PipelineProps } from './context-helper';
+import { PipelineProps, ContextError } from './context-helper';
 import { DbContStack } from './db-cont-stack';
 
 export interface RepoDbContPipelineProps extends StackProps {
   pipeline: PipelineProps,
   dbCont: DbContStack,
+  cacheBucket: Bucket,
 }
 
 export class RepoDbContPipelineStack extends Stack {
@@ -88,6 +90,37 @@ export class RepoDbContPipelineStack extends Stack {
      * config - filename of testspec file; additional commands for contSpec
      */
     pipelineStages.push(buildStage);
+    if (repoDbContPipelineProps.pipeline.test?.enable) {
+      const linuxEnv = {
+        buildImage: LinuxBuildImage.STANDARD_5_0,
+      };
+      const testSpecFilename = repoDbContPipelineProps.pipeline.test?.specFilename;
+      if (!testSpecFilename) {
+        throw new ContextError('Invalid test spec filename.');
+      }
+      const testSpec = BuildSpec.fromSourceFilename(testSpecFilename);
+      const testCache = Cache.bucket(repoDbContPipelineProps.cacheBucket, {
+        prefix: id + '/test',
+      });
+      const testProject = new PipelineProject(this, 'TestProject', {
+        buildSpec: testSpec,
+        environment: linuxEnv,
+        cache: testCache,
+      });
+      const linuxTest = new CodeBuildAction({
+        actionName: 'LinuxTest',
+        project: testProject,
+        input: repoOutput,
+        type: CodeBuildActionType.TEST,
+      });
+      const testStage = {
+        stageName: 'Test',
+        actions: [
+          linuxTest,
+        ],
+      };
+      pipelineStages.push(testStage);
+    };
     if (repoDbContPipelineProps.pipeline.approval?.enable) {
       const approvalAction = new ManualApprovalAction({
         actionName: 'ManualApproval',

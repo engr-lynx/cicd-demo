@@ -1,4 +1,5 @@
 import { Construct } from '@aws-cdk/core';
+import { Bucket } from '@aws-cdk/aws-s3';
 import { Cluster } from '@aws-cdk/aws-ecs';
 import { Vpc } from '@aws-cdk/aws-ec2';
 import { AppKind, CustomSlsContProps, CustomAppContProps, AppProps } from './context-helper';
@@ -9,6 +10,7 @@ export interface AppNPipelineProps {
   app: AppProps,
   vpc: Vpc,
   cluster?: Cluster,
+  cacheBucket: Bucket,
 }
 
 export function buildAppNPipeline (scope: Construct, prefix: string, appNPipelineProps: AppNPipelineProps) {
@@ -22,6 +24,7 @@ export function buildAppNPipeline (scope: Construct, prefix: string, appNPipelin
       new RepoSlsContPipelineStack(scope, prefix + 'AppPipeline', {
         pipeline: customSlsContProps.pipeline,
         slsCont,
+        cacheBucket: appNPipelineProps.cacheBucket,
       });
       return;
     case AppKind.CustomAppCont:
@@ -30,7 +33,7 @@ export function buildAppNPipeline (scope: Construct, prefix: string, appNPipelin
       if (!cluster) {
         throw new Error('Undefined cluster.');
       };
-      // Todo
+      // Todo: Use cacheBucket.
     default:
       throw new Error('Unsupported Type');
   };

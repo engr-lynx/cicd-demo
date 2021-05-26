@@ -1,5 +1,4 @@
 import { Artifact } from '@aws-cdk/aws-codepipeline';
-import { LinuxBuildImage } from '@aws-cdk/aws-codebuild';
 import { Construct, Stack, StackProps } from '@aws-cdk/core';
 import { CdkPipeline, SimpleSynthAction } from "@aws-cdk/pipelines";
 import { ArchiDeployStage } from './archi-deploy-stage';

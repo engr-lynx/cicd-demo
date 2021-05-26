@@ -35,7 +35,7 @@ export class RepoCdnPipelineStack extends Stack {
     };
     pipelineStages.push(sourceStage);
     const buildCache = Cache.bucket(repoCdnPipelineProps.cacheBucket, {
-      prefix: 'build'
+      prefix: 'build',
     });
     const linuxEnv = {
       buildImage: LinuxBuildImage.STANDARD_5_0,
@@ -72,7 +72,7 @@ export class RepoCdnPipelineStack extends Stack {
       }
       const testSpec = BuildSpec.fromSourceFilename(testSpecFilename);
       const testCache = Cache.bucket(repoCdnPipelineProps.cacheBucket, {
-        prefix: 'test'
+        prefix: 'test',
       });
       const testProject = new PipelineProject(this, 'TestProject', {
         buildSpec: testSpec,
