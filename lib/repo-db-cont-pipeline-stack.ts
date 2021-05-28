@@ -46,6 +46,7 @@ export class RepoDbContPipelineStack extends Stack {
       input: repoOutput,
       envVar,
       postBuildCommands: [
+        'echo ${TASK_FAMILY}',
         'aws ecs register-task-definition --family ${TASK_FAMILY}',
       ]
     });
