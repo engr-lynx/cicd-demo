@@ -12,6 +12,7 @@ import { RetentionDays } from '@aws-cdk/aws-logs';
 import { buildRepoSourceAction } from './pipeline-helper';
 import { PipelineProps, ContextError } from './context-helper';
 import { DbContStack } from './db-cont-stack';
+import { buildContBuildAction } from './pipeline-helper'
 
 export interface RepoDbContPipelineProps extends StackProps {
   pipeline: PipelineProps,
@@ -37,47 +38,16 @@ export class RepoDbContPipelineStack extends Stack {
     };
     pipelineStages.push(sourceStage);
     const contRepo = new Repository(this, 'ContRepo');
-    const contSpec = BuildSpec.fromObject({
-      version: '0.2',
-      env: {
-        variables: {
-          REPO_URI: contRepo.repositoryUri,
-          TASK_FAMILY: repoDbContPipelineProps.dbCont.task.family,
-        },
-      },
-      phases: {
-        pre_build: {
-          commands: [
-            'aws ecr get-login-password | docker login --username AWS --password-stdin ${REPO_URI}',
-            'docker pull ${REPO_URI}:latest || true',
-          ],
-        },
-        build: {
-          commands: 'DOCKER_BUILDKIT=1 docker build --build-arg BUILDKIT_INLINE_CACHE=1 \
-            --cache-from ${REPO_URI}:latest -t ${REPO_URI}:latest .',
-        },
-        post_build: {
-          commands: [
-            'docker push ${REPO_URI}',
-            'aws ecs register-task-definition --family ${TASK_FAMILY}'
-          ],
-        },
-      },
-    });
-    const linuxPrivilegedEnv = {
-      buildImage: LinuxBuildImage.STANDARD_5_0,
-      privileged: true,
-    };
-    const contProject = new PipelineProject(this, 'ContProject', {
-      environment: linuxPrivilegedEnv,
-      buildSpec: contSpec,
-    });
-    AuthorizationToken.grantRead(contProject);
-    contRepo.grantPullPush(contProject);
-    const contBuild = new CodeBuildAction({
-      actionName: 'ContBuild',
-      project: contProject,
+    const envVar = {
+      TASK_FAMILY: repoDbContPipelineProps.dbCont.task.family,
+    }
+    const contBuild = buildContBuildAction(this, {
+      repo: contRepo,
       input: repoOutput,
+      envVar,
+      postBuildCommands: [
+        'aws ecs register-task-definition --family ${TASK_FAMILY}',
+      ]
     });
     const buildStage = {
       stageName: 'Build',
@@ -86,8 +56,9 @@ export class RepoDbContPipelineStack extends Stack {
       ],
     };
     /* Todo:
-     * optional stages (in order from build) - staging (Lambda alias / API Gateway stage), test
-     * config - filename of testspec file; additional commands for contSpec
+     * replace build stage with validation stage
+     * optional stages (in order from validation) - staging (container built from backup), staging cleanup (stop task)
+     * config - additional commands for contSpec
      */
     pipelineStages.push(buildStage);
     if (repoDbContPipelineProps.pipeline.test?.enable) {

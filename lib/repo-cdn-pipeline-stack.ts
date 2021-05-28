@@ -34,6 +34,7 @@ export class RepoCdnPipelineStack extends Stack {
       ],
     };
     pipelineStages.push(sourceStage);
+    /*2*/
     const buildCache = Cache.bucket(repoCdnPipelineProps.cacheBucket, {
       prefix: 'build',
     });
@@ -44,7 +45,7 @@ export class RepoCdnPipelineStack extends Stack {
       environment: linuxEnv,
       cache: buildCache,
     });
-    const buildOutput = new Artifact('BuildOutput');
+    const buildOutput = new Artifact('BuildOutput'); /***/
     const customBuild = new CodeBuildAction({
       actionName: 'CustomBuild',
       project: customProject,
@@ -53,6 +54,7 @@ export class RepoCdnPipelineStack extends Stack {
         buildOutput,
       ],
     });
+    /*2*/
     const buildStage = {
       stageName: 'Build',
       actions: [
@@ -61,7 +63,7 @@ export class RepoCdnPipelineStack extends Stack {
     };
     pipelineStages.push(buildStage);
     /* Todo:
-     * optional stages (in order from build) - staging (2 identical cdn-stack), approval
+     * optional stages (in order from build) - staging (2 identical cdn-stack), approval, staging cleanup (empty s3)
      * config - privileged build?
      * switch S3s for the staging & prod CloudFronts
      */
@@ -120,6 +122,7 @@ export class RepoCdnPipelineStack extends Stack {
         distributionArn,
       ],
     });
+    /*3*/
     const distributionCode = Code.fromAsset(join(__dirname, 'distribution-handler'));
     const distributionHandler = new Function(this, 'DistributionHandler', {
       runtime: Runtime.PYTHON_3_8,
@@ -139,6 +142,7 @@ export class RepoCdnPipelineStack extends Stack {
       lambda: distributionHandler,
       userParameters: distributionProps,
     });
+    /*3*/
     const invalidateStage = {
       stageName: 'Invalidate',
       actions: [

@@ -1,6 +1,8 @@
 import { Repository, IRepository } from '@aws-cdk/aws-codecommit';
+import { Repository as EcrRepository, AuthorizationToken } from '@aws-cdk/aws-ecr';
+import { PipelineProject, LinuxBuildImage, BuildSpec } from '@aws-cdk/aws-codebuild';
 import { Artifact } from '@aws-cdk/aws-codepipeline';
-import { GitHubSourceAction, CodeCommitSourceAction } from '@aws-cdk/aws-codepipeline-actions';
+import { GitHubSourceAction, CodeCommitSourceAction, CodeBuildAction } from '@aws-cdk/aws-codepipeline-actions';
 import { Construct, SecretValue } from '@aws-cdk/core';
 import { RepoKind, CodeCommitProps, GitHubProps, RepoProps } from './context-helper'
 
@@ -41,4 +43,67 @@ export function buildRepoSourceAction (scope: Construct, repoSourceActionProps: 
     default:
       throw new Error('Unsupported Type');
   };
+}
+
+interface KeyValue {
+  [key: string]: string,
+}
+
+export interface ContBuildActionProps {
+  repo: EcrRepository,
+  input: Artifact,
+  envVar?: KeyValue,
+  preBuildCommands?: string[];
+  postBuildCommands?: string[];
+}
+
+export function buildContBuildAction (scope: Construct, contBuildActionProps: ContBuildActionProps) {
+  const envVar = {
+    ...contBuildActionProps.envVar??{},
+    REPO_URI: contBuildActionProps.repo.repositoryUri,
+  };
+  const preBuildCommands = [];
+  preBuildCommands.push(...contBuildActionProps.preBuildCommands??[]);
+  preBuildCommands.push(
+    'aws ecr get-login-password | docker login --username AWS --password-stdin ${REPO_URI}',
+    'docker pull ${REPO_URI}:latest || true',
+  );
+  const postBuildCommands = [];
+  postBuildCommands.push(
+    'docker push ${REPO_URI}',
+  );
+  postBuildCommands.push(...contBuildActionProps.postBuildCommands??[]);
+  const contSpec = BuildSpec.fromObject({
+    version: '0.2',
+    env: {
+      variables: envVar,
+    },
+    phases: {
+      pre_build: {
+        commands: preBuildCommands,
+      },
+      build: {
+        commands: 'DOCKER_BUILDKIT=1 docker build --build-arg BUILDKIT_INLINE_CACHE=1 \
+          --cache-from ${REPO_URI}:latest -t ${REPO_URI}:latest .',
+      },
+      post_build: {
+        commands: postBuildCommands,
+      },
+    },
+  });
+  const linuxPrivilegedEnv = {
+    buildImage: LinuxBuildImage.STANDARD_5_0,
+    privileged: true,
+  };
+  const contProject = new PipelineProject(scope, 'ContProject', {
+    environment: linuxPrivilegedEnv,
+    buildSpec: contSpec,
+  });
+  AuthorizationToken.grantRead(contProject);
+  contBuildActionProps.repo.grantPullPush(contProject);
+  return new CodeBuildAction({
+    actionName: 'ContBuild',
+    project: contProject,
+    input: contBuildActionProps.input,
+  });
 }

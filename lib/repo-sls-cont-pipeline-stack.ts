@@ -11,6 +11,7 @@ import { RetentionDays } from '@aws-cdk/aws-logs';
 import { buildRepoSourceAction } from './pipeline-helper';
 import { PipelineProps, ContextError } from './context-helper';
 import { SlsContStack } from './sls-cont-stack';
+import { buildContBuildAction } from './pipeline-helper'
 
 export interface RepoSlsContPipelineProps extends StackProps {
   pipeline: PipelineProps,
@@ -36,42 +37,8 @@ export class RepoSlsContPipelineStack extends Stack {
     };
     pipelineStages.push(sourceStage);
     const contRepo = new Repository(this, 'ContRepo');
-    const contSpec = BuildSpec.fromObject({
-      version: '0.2',
-      env: {
-        variables: {
-          REPO_URI: contRepo.repositoryUri,
-        },
-      },
-      phases: {
-        pre_build: {
-          commands: [
-            'aws ecr get-login-password | docker login --username AWS --password-stdin ${REPO_URI}',
-            'docker pull ${REPO_URI}:latest || true',
-          ],
-        },
-        build: {
-          commands: 'DOCKER_BUILDKIT=1 docker build --build-arg BUILDKIT_INLINE_CACHE=1 \
-            --cache-from ${REPO_URI}:latest -t ${REPO_URI}:latest .',
-        },
-        post_build: {
-          commands: 'docker push ${REPO_URI}',
-        },
-      },
-    });
-    const linuxPrivilegedEnv = {
-      buildImage: LinuxBuildImage.STANDARD_5_0,
-      privileged: true,
-    };
-    const contProject = new PipelineProject(this, 'ContProject', {
-      environment: linuxPrivilegedEnv,
-      buildSpec: contSpec,
-    });
-    AuthorizationToken.grantRead(contProject);
-    contRepo.grantPullPush(contProject);
-    const contBuild = new CodeBuildAction({
-      actionName: 'ContBuild',
-      project: contProject,
+    const contBuild = buildContBuildAction(this, {
+      repo: contRepo,
       input: repoOutput,
     });
     const buildStage = {
@@ -81,8 +48,8 @@ export class RepoSlsContPipelineStack extends Stack {
       ],
     };
     /* Todo:
-     * optional stages (in order from build) - staging (Lambda alias), test
-     * config - filename of testspec file; additional commands for contSpec
+     * optional stages (in order from build) - staging (Lambda alias)
+     * config - additional commands for contSpec
      * switch Lambdas for the staging & prod API Gateways
      */
     pipelineStages.push(buildStage);
