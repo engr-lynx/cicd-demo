@@ -18,11 +18,11 @@ export function buildAppNPipeline (scope: Construct, appNPipelineProps: AppNPipe
   switch(appNPipelineProps.app.kind) {
     case AppKind.CustomSlsCont:
       const customSlsContProps = appNPipelineProps.app as CustomSlsContProps;
-      const slsCont = new SlsContStack(scope, appNPipelineProps.prefix??'' + 'App', {
+      const slsCont = new SlsContStack(scope, (appNPipelineProps.prefix??'') + 'App', {
         customSlsCont: customSlsContProps,
         vpc: appNPipelineProps.vpc,
       });      
-      new RepoSlsContPipelineStack(scope, appNPipelineProps.prefix??'' + 'AppPipeline', {
+      new RepoSlsContPipelineStack(scope, (appNPipelineProps.prefix??'') + 'AppPipeline', {
         pipeline: customSlsContProps.pipeline,
         slsCont,
         cacheBucket: appNPipelineProps.cacheBucket,

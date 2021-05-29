@@ -25,12 +25,12 @@ export function buildDbNPipeline (scope: Construct, dbNPipelineProps: DbNPipelin
       if (!cluster) {
         throw new Error('Undefined cluster.');
       };
-      const dbCont = new DbContStack(scope, dbNPipelineProps.prefix??'' + 'Db', {
+      const dbCont = new DbContStack(scope, (dbNPipelineProps.prefix??'') + 'Db', {
         customDbCont: customDbContProps,
         namespace: dbNPipelineProps.namespace,
         cluster,
       });
-      new RepoDbContPipelineStack(scope, dbNPipelineProps.prefix??'' + 'DbPipeline', {
+      new RepoDbContPipelineStack(scope, (dbNPipelineProps.prefix??'') + 'DbPipeline', {
         pipeline: customDbContProps.pipeline,
         dbCont,
         cacheBucket: dbNPipelineProps.cacheBucket,

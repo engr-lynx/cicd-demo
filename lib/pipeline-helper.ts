@@ -13,11 +13,11 @@ export interface RepoSourceActionProps {
 }
 
 export function buildRepoSourceAction (scope: Construct, repoSourceActionProps: RepoSourceActionProps) {
-  const actionName = repoSourceActionProps.prefix??'' + 'RepoSource';
+  const actionName = (repoSourceActionProps.prefix??'') + 'RepoSource';
   switch(repoSourceActionProps.repo.kind) {
     case RepoKind.CodeCommit:
       const codeCommitProps = repoSourceActionProps.repo as CodeCommitProps;
-      const repoId = repoSourceActionProps.prefix??'' + 'Repo';
+      const repoId = (repoSourceActionProps.prefix??'') + 'Repo';
       let repository: IRepository;
       if (codeCommitProps.create) {
         repository = new Repository(scope, repoId, {
@@ -61,7 +61,7 @@ export interface ContBuildActionProps {
 
 export function buildContBuildAction (scope: Construct, contBuildActionProps: ContBuildActionProps) {
   const envVar = {
-    ...contBuildActionProps.envVar??{},
+    ...contBuildActionProps.envVar,
     REPO_URI: contBuildActionProps.repo.repositoryUri,
   };
   const preBuildCommands = [];
@@ -97,14 +97,14 @@ export function buildContBuildAction (scope: Construct, contBuildActionProps: Co
     buildImage: LinuxBuildImage.STANDARD_5_0,
     privileged: true,
   };
-  const projectName = contBuildActionProps.prefix??'' + 'ContProject'
+  const projectName = (contBuildActionProps.prefix??'') + 'ContProject';
   const contProject = new PipelineProject(scope, projectName, {
     environment: linuxPrivilegedEnv,
     buildSpec: contSpec,
   });
   AuthorizationToken.grantRead(contProject);
   contBuildActionProps.repo.grantPullPush(contProject);
-  const actionName = contBuildActionProps.prefix??'' + 'ContBuild'
+  const actionName = (contBuildActionProps.prefix??'') + 'ContBuild';
   return new CodeBuildAction({
     actionName,
     project: contProject,
