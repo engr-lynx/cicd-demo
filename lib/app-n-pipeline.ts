@@ -8,20 +8,21 @@ import { RepoSlsContPipelineStack } from './repo-sls-cont-pipeline-stack';
 
 export interface AppNPipelineProps {
   app: AppProps,
+  prefix?: string,
   vpc: Vpc,
   cluster?: Cluster,
   cacheBucket: Bucket,
 }
 
-export function buildAppNPipeline (scope: Construct, prefix: string, appNPipelineProps: AppNPipelineProps) {
+export function buildAppNPipeline (scope: Construct, appNPipelineProps: AppNPipelineProps) {
   switch(appNPipelineProps.app.kind) {
     case AppKind.CustomSlsCont:
       const customSlsContProps = appNPipelineProps.app as CustomSlsContProps;
-      const slsCont = new SlsContStack(scope, prefix + 'App', {
+      const slsCont = new SlsContStack(scope, appNPipelineProps.prefix??'' + 'App', {
         customSlsCont: customSlsContProps,
         vpc: appNPipelineProps.vpc,
       });      
-      new RepoSlsContPipelineStack(scope, prefix + 'AppPipeline', {
+      new RepoSlsContPipelineStack(scope, appNPipelineProps.prefix??'' + 'AppPipeline', {
         pipeline: customSlsContProps.pipeline,
         slsCont,
         cacheBucket: appNPipelineProps.cacheBucket,

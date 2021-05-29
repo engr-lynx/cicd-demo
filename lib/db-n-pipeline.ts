@@ -8,12 +8,13 @@ import { RepoDbContPipelineStack } from './repo-db-cont-pipeline-stack';
 
 export interface DbNPipelineProps {
   db: DbProps,
+  prefix?: string,
   namespace: PrivateDnsNamespace,
   cluster?: Cluster,
   cacheBucket: Bucket,
 }
 
-export function buildDbNPipeline (scope: Construct, prefix: string, dbNPipelineProps: DbNPipelineProps) {
+export function buildDbNPipeline (scope: Construct, dbNPipelineProps: DbNPipelineProps) {
   switch(dbNPipelineProps.db.kind) {
     case DbKind.AuroraSls:
       const auroraSlsProps = dbNPipelineProps.db as AuroraSlsProps;
@@ -24,12 +25,12 @@ export function buildDbNPipeline (scope: Construct, prefix: string, dbNPipelineP
       if (!cluster) {
         throw new Error('Undefined cluster.');
       };
-      const dbCont = new DbContStack(scope, prefix + 'Db', {
+      const dbCont = new DbContStack(scope, dbNPipelineProps.prefix??'' + 'Db', {
         customDbCont: customDbContProps,
         namespace: dbNPipelineProps.namespace,
         cluster,
       });
-      new RepoDbContPipelineStack(scope, prefix + 'DbPipeline', {
+      new RepoDbContPipelineStack(scope, dbNPipelineProps.prefix??'' + 'DbPipeline', {
         pipeline: customDbContProps.pipeline,
         dbCont,
         cacheBucket: dbNPipelineProps.cacheBucket,

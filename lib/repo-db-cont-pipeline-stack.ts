@@ -62,6 +62,7 @@ export class RepoDbContPipelineStack extends Stack {
      */
     pipelineStages.push(buildStage);
     if (repoDbContPipelineProps.pipeline.test?.enable) {
+      /*2*/
       const linuxEnv = {
         buildImage: LinuxBuildImage.STANDARD_5_0,
       };
@@ -84,6 +85,7 @@ export class RepoDbContPipelineStack extends Stack {
         input: repoOutput,
         type: CodeBuildActionType.TEST,
       });
+      /*2*/
       const testStage = {
         stageName: 'Test',
         actions: [

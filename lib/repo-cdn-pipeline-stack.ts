@@ -34,6 +34,7 @@ export class RepoCdnPipelineStack extends Stack {
       ],
     };
     pipelineStages.push(sourceStage);
+    const buildOutput = new Artifact('BuildOutput');
     /*2*/
     const buildCache = Cache.bucket(repoCdnPipelineProps.cacheBucket, {
       prefix: 'build',
@@ -45,7 +46,6 @@ export class RepoCdnPipelineStack extends Stack {
       environment: linuxEnv,
       cache: buildCache,
     });
-    const buildOutput = new Artifact('BuildOutput'); /***/
     const customBuild = new CodeBuildAction({
       actionName: 'CustomBuild',
       project: customProject,
@@ -68,6 +68,7 @@ export class RepoCdnPipelineStack extends Stack {
      * switch S3s for the staging & prod CloudFronts
      */
     if (repoCdnPipelineProps.pipeline.test?.enable) {
+      /*2*/
       const testSpecFilename = repoCdnPipelineProps.pipeline.test?.specFilename;
       if (!testSpecFilename) {
         throw new ContextError('Invalid test spec filename.');
@@ -87,6 +88,7 @@ export class RepoCdnPipelineStack extends Stack {
         input: repoOutput,
         type: CodeBuildActionType.TEST,
       });
+      /*2*/
       const testStage = {
         stageName: 'Test',
         actions: [

@@ -25,14 +25,16 @@ export class ArchiDeployStage extends Stage {
     });
     const servicePipelinesCache = new PipelineCacheStack(this, 'ServicePipelinesCache');
     servicesProps.list.forEach(serviceProps => {
-      buildDbNPipeline(this, serviceProps.id, {
+      buildDbNPipeline(this, {
         db: serviceProps.db,
+        prefix: serviceProps.id,
         namespace: serviceNetwork.namespace,
         cluster: serviceNetwork.cluster,
         cacheBucket: servicePipelinesCache.bucket,
       });
-      buildAppNPipeline(this, serviceProps.id, {
+      buildAppNPipeline(this, {
         app: serviceProps.app,
+        prefix: serviceProps.id,
         vpc: serviceNetwork.vpc,
         cluster: serviceNetwork.cluster,
         cacheBucket: servicePipelinesCache.bucket,

@@ -8,15 +8,16 @@ import { RepoKind, CodeCommitProps, GitHubProps, RepoProps } from './context-hel
 
 export interface RepoSourceActionProps {
   repo: RepoProps,
+  prefix?: string,
   output: Artifact,
 }
 
 export function buildRepoSourceAction (scope: Construct, repoSourceActionProps: RepoSourceActionProps) {
-  const actionName = 'RepoSource';
+  const actionName = repoSourceActionProps.prefix??'' + 'RepoSource';
   switch(repoSourceActionProps.repo.kind) {
     case RepoKind.CodeCommit:
       const codeCommitProps = repoSourceActionProps.repo as CodeCommitProps;
-      const repoId = scope.node.id + 'Repo';
+      const repoId = repoSourceActionProps.prefix??'' + 'Repo';
       let repository: IRepository;
       if (codeCommitProps.create) {
         repository = new Repository(scope, repoId, {
@@ -50,6 +51,7 @@ interface KeyValue {
 }
 
 export interface ContBuildActionProps {
+  prefix?: string,
   repo: EcrRepository,
   input: Artifact,
   envVar?: KeyValue,
@@ -95,14 +97,16 @@ export function buildContBuildAction (scope: Construct, contBuildActionProps: Co
     buildImage: LinuxBuildImage.STANDARD_5_0,
     privileged: true,
   };
-  const contProject = new PipelineProject(scope, 'ContProject', {
+  const projectName = contBuildActionProps.prefix??'' + 'ContProject'
+  const contProject = new PipelineProject(scope, projectName, {
     environment: linuxPrivilegedEnv,
     buildSpec: contSpec,
   });
   AuthorizationToken.grantRead(contProject);
   contBuildActionProps.repo.grantPullPush(contProject);
+  const actionName = contBuildActionProps.prefix??'' + 'ContBuild'
   return new CodeBuildAction({
-    actionName: 'ContBuild',
+    actionName,
     project: contProject,
     input: contBuildActionProps.input,
   });
