@@ -7,7 +7,7 @@ import { PipelineProject, LinuxBuildImage, BuildSpec, Cache } from '@aws-cdk/aws
 import { Artifact, Pipeline } from '@aws-cdk/aws-codepipeline';
 import { CodeBuildAction, CodeBuildActionType, S3DeployAction, LambdaInvokeAction } from '@aws-cdk/aws-codepipeline-actions';
 import { RetentionDays } from '@aws-cdk/aws-logs';
-import { buildRepoSourceAction } from './pipeline-helper';
+import { buildRepoSourceAction, buildCustomAction } from './pipeline-helper';
 import { PipelineProps, ContextError } from './context-helper';
 import { CdnStack } from './cdn-stack';
 
@@ -35,30 +35,18 @@ export class RepoCdnPipelineStack extends Stack {
     };
     pipelineStages.push(sourceStage);
     const buildOutput = new Artifact('BuildOutput');
-    /*2*/
-    const buildCache = Cache.bucket(repoCdnPipelineProps.cacheBucket, {
-      prefix: 'build',
-    });
-    const linuxEnv = {
-      buildImage: LinuxBuildImage.STANDARD_5_0,
-    };
-    const customProject = new PipelineProject(this, 'CustomProject', {
-      environment: linuxEnv,
-      cache: buildCache,
-    });
-    const customBuild = new CodeBuildAction({
-      actionName: 'CustomBuild',
-      project: customProject,
+    const buildAction = buildCustomAction(this, {
+      prefix: 'Build',
       input: repoOutput,
       outputs: [
         buildOutput,
       ],
+      cacheBucket: repoCdnPipelineProps.cacheBucket,
     });
-    /*2*/
     const buildStage = {
       stageName: 'Build',
       actions: [
-        customBuild,
+        buildAction,
       ],
     };
     pipelineStages.push(buildStage);
@@ -68,31 +56,21 @@ export class RepoCdnPipelineStack extends Stack {
      * switch S3s for the staging & prod CloudFronts
      */
     if (repoCdnPipelineProps.pipeline.test?.enable) {
-      /*2*/
-      const testSpecFilename = repoCdnPipelineProps.pipeline.test?.specFilename;
-      if (!testSpecFilename) {
+      const specFilename = repoCdnPipelineProps.pipeline.test?.specFilename;
+      if (!specFilename) {
         throw new ContextError('Invalid test spec filename.');
-      }
-      const testSpec = BuildSpec.fromSourceFilename(testSpecFilename);
-      const testCache = Cache.bucket(repoCdnPipelineProps.cacheBucket, {
-        prefix: 'test',
-      });
-      const testProject = new PipelineProject(this, 'TestProject', {
-        buildSpec: testSpec,
-        environment: linuxEnv,
-        cache: testCache,
-      });
-      const linuxTest = new CodeBuildAction({
-        actionName: 'LinuxTest',
-        project: testProject,
-        input: repoOutput,
+      };
+      const testAction = buildCustomAction(this, {
+        prefix: 'Test',
         type: CodeBuildActionType.TEST,
+        specFilename,
+        input: repoOutput,
+        cacheBucket: repoCdnPipelineProps.cacheBucket,
       });
-      /*2*/
       const testStage = {
         stageName: 'Test',
         actions: [
-          linuxTest,
+          testAction,
         ],
       };
       pipelineStages.push(testStage);

@@ -12,7 +12,7 @@ import { RetentionDays } from '@aws-cdk/aws-logs';
 import { buildRepoSourceAction } from './pipeline-helper';
 import { PipelineProps, ContextError } from './context-helper';
 import { DbContStack } from './db-cont-stack';
-import { buildContBuildAction } from './pipeline-helper'
+import { buildContBuildAction, buildCustomAction } from './pipeline-helper'
 
 export interface RepoDbContPipelineProps extends StackProps {
   pipeline: PipelineProps,
@@ -62,34 +62,22 @@ export class RepoDbContPipelineStack extends Stack {
      */
     pipelineStages.push(buildStage);
     if (repoDbContPipelineProps.pipeline.test?.enable) {
-      /*2*/
-      const linuxEnv = {
-        buildImage: LinuxBuildImage.STANDARD_5_0,
-      };
-      const testSpecFilename = repoDbContPipelineProps.pipeline.test?.specFilename;
-      if (!testSpecFilename) {
+      const specFilename = repoDbContPipelineProps.pipeline.test?.specFilename;
+      if (!specFilename) {
         throw new ContextError('Invalid test spec filename.');
-      }
-      const testSpec = BuildSpec.fromSourceFilename(testSpecFilename);
-      const testCache = Cache.bucket(repoDbContPipelineProps.cacheBucket, {
-        prefix: id + '/test',
-      });
-      const testProject = new PipelineProject(this, 'TestProject', {
-        buildSpec: testSpec,
-        environment: linuxEnv,
-        cache: testCache,
-      });
-      const linuxTest = new CodeBuildAction({
-        actionName: 'LinuxTest',
-        project: testProject,
-        input: repoOutput,
+      };
+      const prefix = id + 'Test';
+      const testAction = buildCustomAction(this, {
+        prefix,
         type: CodeBuildActionType.TEST,
+        specFilename,
+        input: repoOutput,
+        cacheBucket: repoDbContPipelineProps.cacheBucket,
       });
-      /*2*/
       const testStage = {
         stageName: 'Test',
         actions: [
-          linuxTest,
+          testAction,
         ],
       };
       pipelineStages.push(testStage);

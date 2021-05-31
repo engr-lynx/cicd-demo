@@ -1,8 +1,9 @@
 import { Repository, IRepository } from '@aws-cdk/aws-codecommit';
 import { Repository as EcrRepository, AuthorizationToken } from '@aws-cdk/aws-ecr';
-import { PipelineProject, LinuxBuildImage, BuildSpec } from '@aws-cdk/aws-codebuild';
+import { PipelineProject, LinuxBuildImage, BuildSpec, Cache } from '@aws-cdk/aws-codebuild';
 import { Artifact } from '@aws-cdk/aws-codepipeline';
-import { GitHubSourceAction, CodeCommitSourceAction, CodeBuildAction } from '@aws-cdk/aws-codepipeline-actions';
+import { GitHubSourceAction, CodeCommitSourceAction, CodeBuildAction, CodeBuildActionType } from '@aws-cdk/aws-codepipeline-actions';
+import { Bucket } from '@aws-cdk/aws-s3';
 import { Construct, SecretValue } from '@aws-cdk/core';
 import { RepoKind, CodeCommitProps, GitHubProps, RepoProps } from './context-helper'
 
@@ -111,5 +112,42 @@ export function buildContBuildAction (scope: Construct, contBuildActionProps: Co
     actionName,
     project: contProject,
     input: contBuildActionProps.input,
+  });
+}
+
+export interface CustomActionProps {
+  prefix?: string,
+  type?: CodeBuildActionType,
+  specFilename?: string,
+  input: Artifact,
+  outputs?: Artifact[],
+  cacheBucket: Bucket,
+}
+
+export function buildCustomAction (scope: Construct, customActionProps: CustomActionProps) {
+  const prefix = customActionProps.prefix??'';
+  let buildSpec;
+  if (customActionProps.specFilename) {
+    buildSpec = BuildSpec.fromSourceFilename(customActionProps.specFilename);
+  }
+  const environment = {
+    buildImage: LinuxBuildImage.STANDARD_5_0,
+  };
+  const cache = Cache.bucket(customActionProps.cacheBucket, {
+    prefix,
+  });
+  const projectName = prefix + 'Project';
+  const customProject = new PipelineProject(scope, projectName, {
+    buildSpec,
+    environment,
+    cache,
+  });
+  const actionName = prefix + 'Action';
+  return new CodeBuildAction({
+    actionName,
+    project: customProject,
+    type: customActionProps.type,
+    input: customActionProps.input,
+    outputs: customActionProps.outputs,
   });
 }
