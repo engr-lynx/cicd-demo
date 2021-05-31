@@ -1,13 +1,8 @@
-import { join } from 'path';
-import { Construct, Stack, StackProps, Arn, Duration } from '@aws-cdk/core';
+import { Construct, Stack, StackProps, Arn } from '@aws-cdk/core';
 import { Bucket } from '@aws-cdk/aws-s3';
-import { Function, Runtime, Code } from '@aws-cdk/aws-lambda';
-import { PolicyStatement, Effect } from '@aws-cdk/aws-iam';
-import { PipelineProject, LinuxBuildImage, BuildSpec, Cache } from '@aws-cdk/aws-codebuild';
 import { Artifact, Pipeline } from '@aws-cdk/aws-codepipeline';
-import { CodeBuildAction, CodeBuildActionType, S3DeployAction, LambdaInvokeAction } from '@aws-cdk/aws-codepipeline-actions';
-import { RetentionDays } from '@aws-cdk/aws-logs';
-import { buildRepoSourceAction, buildCustomAction } from './pipeline-helper';
+import { CodeBuildActionType, S3DeployAction } from '@aws-cdk/aws-codepipeline-actions';
+import { buildRepoSourceAction, buildCustomAction, buildPyInvokeAction } from './pipeline-helper';
 import { PipelineProps, ContextError } from './context-helper';
 import { CdnStack } from './cdn-stack';
 
@@ -87,46 +82,37 @@ export class RepoCdnPipelineStack extends Stack {
       ],
     };
     pipelineStages.push(deployStage);
+    const distributionId = repoCdnPipelineProps.cdn.distribution.distributionId
     const distributionArn = Arn.format({
       service: 'cloudfront',
       resource: 'distribution',
       region: '',
-      resourceName: repoCdnPipelineProps.cdn.distribution.distributionId,
+      resourceName: distributionId,
     }, this);
-    const distributionPolicy = new PolicyStatement({
-      effect: Effect.ALLOW,
+    const distributionPolicy = {
       actions: [
         'cloudfront:CreateInvalidation',
       ],
       resources: [
         distributionArn,
       ],
-    });
-    /*3*/
-    const distributionCode = Code.fromAsset(join(__dirname, 'distribution-handler'));
-    const distributionHandler = new Function(this, 'DistributionHandler', {
-      runtime: Runtime.PYTHON_3_8,
-      handler: 'distribution.on_event',
-      code: distributionCode,
-      timeout: Duration.minutes(1),
-      logRetention: RetentionDays.ONE_DAY,
-      initialPolicy: [
+    };
+    const params = {
+      distributionId,
+    };
+    const invalidateAction = buildPyInvokeAction(this, {
+      prefix: 'Invalidate',
+      policies: [
         distributionPolicy,
       ],
+      path: 'distribution-handler',
+      handler: 'distribution.on_event',
+      params,
     });
-    const distributionProps = {
-      distributionId: repoCdnPipelineProps.cdn.distribution.distributionId,
-    };
-    const cacheInvalidate = new LambdaInvokeAction({
-      actionName: 'CacheInvalidate',
-      lambda: distributionHandler,
-      userParameters: distributionProps,
-    });
-    /*3*/
     const invalidateStage = {
       stageName: 'Invalidate',
       actions: [
-        cacheInvalidate,
+        invalidateAction,
       ],
     };
     pipelineStages.push(invalidateStage);

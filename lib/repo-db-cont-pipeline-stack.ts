@@ -1,13 +1,12 @@
 import { join } from 'path';
 import { Construct, Stack, StackProps, Duration } from '@aws-cdk/core';
 import { Bucket } from '@aws-cdk/aws-s3';
-import { Repository, AuthorizationToken } from '@aws-cdk/aws-ecr';
-import { PipelineProject, LinuxBuildImage, BuildSpec, Cache } from '@aws-cdk/aws-codebuild';
+import { Repository } from '@aws-cdk/aws-ecr';
 import { Artifact, Pipeline } from '@aws-cdk/aws-codepipeline';
-import { CodeBuildAction, ManualApprovalAction, CodeBuildActionType, LambdaInvokeAction } from '@aws-cdk/aws-codepipeline-actions';
+import { ManualApprovalAction, CodeBuildActionType, LambdaInvokeAction } from '@aws-cdk/aws-codepipeline-actions';
 import { Function, Runtime, Code } from '@aws-cdk/aws-lambda';
 import { Cluster, FargateService, FargateTaskDefinition, ContainerImage } from '@aws-cdk/aws-ecs';
-import { PolicyStatement, Effect } from '@aws-cdk/aws-iam';
+import { PolicyStatement } from '@aws-cdk/aws-iam';
 import { RetentionDays } from '@aws-cdk/aws-logs';
 import { buildRepoSourceAction } from './pipeline-helper';
 import { PipelineProps, ContextError } from './context-helper';

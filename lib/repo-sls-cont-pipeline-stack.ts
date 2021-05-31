@@ -1,17 +1,12 @@
-import { join } from 'path';
-import { Construct, Stack, StackProps, Duration } from '@aws-cdk/core';
+import { Construct, Stack, StackProps } from '@aws-cdk/core';
 import { Bucket } from '@aws-cdk/aws-s3';
-import { Repository, AuthorizationToken } from '@aws-cdk/aws-ecr';
-import { PipelineProject, LinuxBuildImage, BuildSpec, Cache } from '@aws-cdk/aws-codebuild';
+import { Repository } from '@aws-cdk/aws-ecr';
 import { Artifact, Pipeline } from '@aws-cdk/aws-codepipeline';
-import { CodeBuildAction, ManualApprovalAction, CodeBuildActionType, LambdaInvokeAction } from '@aws-cdk/aws-codepipeline-actions';
-import { Function, Runtime, Code } from '@aws-cdk/aws-lambda';
-import { PolicyStatement, Effect } from '@aws-cdk/aws-iam';
-import { RetentionDays } from '@aws-cdk/aws-logs';
+import { ManualApprovalAction, CodeBuildActionType } from '@aws-cdk/aws-codepipeline-actions';
 import { buildRepoSourceAction } from './pipeline-helper';
 import { PipelineProps, ContextError } from './context-helper';
 import { SlsContStack } from './sls-cont-stack';
-import { buildContBuildAction, buildCustomAction } from './pipeline-helper'
+import { buildContBuildAction, buildCustomAction, buildPyInvokeAction } from './pipeline-helper'
 
 export interface RepoSlsContPipelineProps extends StackProps {
   pipeline: PipelineProps,
@@ -86,44 +81,42 @@ export class RepoSlsContPipelineStack extends Stack {
       };
       pipelineStages.push(approvalStage);
     };
-    const deployPolicy = new PolicyStatement({
-      effect: Effect.ALLOW,
+    const funcPolicy = {
       actions: [
         'lambda:UpdateFunctionCode',
       ],
       resources: [
         repoSlsContPipelineProps.slsCont.func.functionArn,
       ],
-    });
-    const deployCode = Code.fromAsset(join(__dirname, 'sls-cont-deploy-handler'));
-    const deployHandler = new Function(this, 'DeployHandler', {
-      runtime: Runtime.PYTHON_3_8,
-      handler: 'slsdeploy.on_event',
-      code: deployCode,
-      timeout: Duration.minutes(1),
-      logRetention: RetentionDays.ONE_DAY,
-      initialPolicy: [
-        deployPolicy,
+    };
+    const repoPolicy = {
+      actions: [
+        'ecr:SetRepositoryPolicy',
+        'ecr:GetRepositoryPolicy',
+        'ecr:InitiateLayerUpload',
       ],
-    });
-    contRepo.grant(deployHandler,
-      "ecr:SetRepositoryPolicy",
-      "ecr:GetRepositoryPolicy",
-      "ecr:InitiateLayerUpload"
-    );
-    const deployProps = {
+      resources: [
+        contRepo.repositoryArn,
+      ],
+    };
+    const params = {
       funcName: repoSlsContPipelineProps.slsCont.func.functionName,
       repoUri: contRepo.repositoryUri + ':latest',
     };
-    const slsDeploy = new LambdaInvokeAction({
-      actionName: 'SlsDeploy',
-      lambda: deployHandler,
-      userParameters: deployProps,
+    const deployAction = buildPyInvokeAction(this, {
+      prefix: 'Deploy',
+      policies: [
+        funcPolicy,
+        repoPolicy,
+      ],
+      path: 'sls-cont-deploy-handler',
+      handler: 'slsdeploy.on_event',
+      params,
     });
     const deployStage = {
       stageName: 'Deploy',
       actions: [
-        slsDeploy,
+        deployAction,
       ],
     };
     pipelineStages.push(deployStage);

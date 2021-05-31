@@ -1,11 +1,19 @@
+import { join } from 'path';
 import { Repository, IRepository } from '@aws-cdk/aws-codecommit';
 import { Repository as EcrRepository, AuthorizationToken } from '@aws-cdk/aws-ecr';
 import { PipelineProject, LinuxBuildImage, BuildSpec, Cache } from '@aws-cdk/aws-codebuild';
 import { Artifact } from '@aws-cdk/aws-codepipeline';
-import { GitHubSourceAction, CodeCommitSourceAction, CodeBuildAction, CodeBuildActionType } from '@aws-cdk/aws-codepipeline-actions';
+import { GitHubSourceAction, CodeCommitSourceAction, CodeBuildAction, CodeBuildActionType, LambdaInvokeAction } from '@aws-cdk/aws-codepipeline-actions';
 import { Bucket } from '@aws-cdk/aws-s3';
-import { Construct, SecretValue } from '@aws-cdk/core';
+import { PolicyStatement } from '@aws-cdk/aws-iam';
+import { RetentionDays } from '@aws-cdk/aws-logs';
+import { Function, Runtime, Code } from '@aws-cdk/aws-lambda';
+import { Construct, SecretValue, Duration } from '@aws-cdk/core';
 import { RepoKind, CodeCommitProps, GitHubProps, RepoProps } from './context-helper'
+
+interface KeyValue {
+  [key: string]: string,
+}
 
 export interface RepoSourceActionProps {
   repo: RepoProps,
@@ -46,10 +54,6 @@ export function buildRepoSourceAction (scope: Construct, repoSourceActionProps: 
     default:
       throw new Error('Unsupported Type');
   };
-}
-
-interface KeyValue {
-  [key: string]: string,
 }
 
 export interface ContBuildActionProps {
@@ -149,5 +153,39 @@ export function buildCustomAction (scope: Construct, customActionProps: CustomAc
     type: customActionProps.type,
     input: customActionProps.input,
     outputs: customActionProps.outputs,
+  });
+}
+
+interface Policy {
+  actions: string[],
+  resources: string [],
+}
+
+export interface PyInvokeActionProps {
+  prefix?: string,
+  policies: Policy[],
+  path: string,
+  handler: string,
+  params?: KeyValue,
+}
+
+export function buildPyInvokeAction (scope: Construct, pyInvokeActionProps: PyInvokeActionProps) {
+  const prefix = pyInvokeActionProps.prefix??'';
+  const initialPolicy = pyInvokeActionProps.policies.map(policy => new PolicyStatement(policy));
+  const code = Code.fromAsset(join(__dirname, pyInvokeActionProps.path));
+  const handlerName = prefix + 'Handler';
+  const lambda = new Function(scope, handlerName, {
+    runtime: Runtime.PYTHON_3_8,
+    handler: pyInvokeActionProps.handler,
+    code,
+    timeout: Duration.minutes(1),
+    logRetention: RetentionDays.ONE_DAY,
+    initialPolicy,
+  });
+  const actionName = prefix + 'Action';
+  return new LambdaInvokeAction({
+    actionName,
+    lambda,
+    userParameters: pyInvokeActionProps.params,
   });
 }
