@@ -24,5 +24,4 @@ export function buildSiteNPipeline (scope: Construct, siteNPipelineProps: SiteNP
     cacheBucket: pipelineCache.bucket,
     env,
   });
-  return;
 }

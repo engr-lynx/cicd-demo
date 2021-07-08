@@ -1,5 +1,5 @@
 import { join } from 'path';
-import { Repository, IRepository } from '@aws-cdk/aws-codecommit';
+import { Repository } from '@aws-cdk/aws-codecommit';
 import { Repository as EcrRepository, AuthorizationToken } from '@aws-cdk/aws-ecr';
 import { PipelineProject, LinuxBuildImage, BuildSpec, Cache } from '@aws-cdk/aws-codebuild';
 import { Artifact } from '@aws-cdk/aws-codepipeline';
@@ -28,14 +28,11 @@ export function buildRepoSourceAction (scope: Construct, repoSourceActionProps: 
     case RepoKind.CodeCommit:
       const codeCommitProps = repoSourceActionProps.repo as CodeCommitProps;
       const repoId = prefix + 'Repo';
-      let repository: IRepository;
-      if (codeCommitProps.create) {
-        repository = new Repository(scope, repoId, {
+      const repository = codeCommitProps.create ?
+        new Repository(scope, repoId, {
           repositoryName: codeCommitProps.name,
-        });  
-      } else {
-        repository = Repository.fromRepositoryName(scope, repoId, codeCommitProps.name);
-      }
+        }) :
+        Repository.fromRepositoryName(scope, repoId, codeCommitProps.name);
       return new CodeCommitSourceAction({
         actionName,
         output: repoSourceActionProps.output,
@@ -130,10 +127,9 @@ export interface CustomActionProps {
 
 export function buildCustomAction (scope: Construct, customActionProps: CustomActionProps) {
   const prefix = customActionProps.prefix??'';
-  let buildSpec;
-  if (customActionProps.specFilename) {
-    buildSpec = BuildSpec.fromSourceFilename(customActionProps.specFilename);
-  }
+  const buildSpec = customActionProps.specFilename ?
+    BuildSpec.fromSourceFilename(customActionProps.specFilename) :
+    undefined;
   const environment = {
     buildImage: LinuxBuildImage.STANDARD_5_0,
   };

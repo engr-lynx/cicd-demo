@@ -40,7 +40,7 @@ export class ContNetworkStack extends Stack {
       name: contNetworkProps.network.namespace,
       vpc: this.vpc,
     });
-    this.cluster = new Cluster(this, "Cluster", {
+    this.cluster = new Cluster(this, 'Cluster', {
       vpc: this.vpc,
     });
   }

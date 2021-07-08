@@ -114,9 +114,9 @@ export class RepoDbContPipelineStack extends Stack {
     //   ],
     // });
     // contRepo.grant(deployHandler,
-    //   "ecr:SetRepositoryPolicy",
-    //   "ecr:GetRepositoryPolicy",
-    //   "ecr:InitiateLayerUpload"
+    //   'ecr:SetRepositoryPolicy',
+    //   'ecr:GetRepositoryPolicy',
+    //   'ecr:InitiateLayerUpload'
     // );
     // const deployProps = {
     //   funcName: repoDbContPipelineProps.func.functionName,

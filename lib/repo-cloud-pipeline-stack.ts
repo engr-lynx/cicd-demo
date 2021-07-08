@@ -1,6 +1,6 @@
 import { Artifact } from '@aws-cdk/aws-codepipeline';
 import { Construct, Stack, StackProps } from '@aws-cdk/core';
-import { CdkPipeline, SimpleSynthAction } from "@aws-cdk/pipelines";
+import { CdkPipeline, SimpleSynthAction } from '@aws-cdk/pipelines';
 import { ArchiDeployStage } from './archi-deploy-stage';
 import { buildRepoSourceAction } from './pipeline-helper';
 import { PipelineProps } from './context-helper';
